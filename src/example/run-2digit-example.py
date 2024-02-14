@@ -1,5 +1,5 @@
 from nesy.model import NeSyModel, MNISTEncoder
-from dataset import AdditionTask
+from example.dataset import AdditionTask
 from nesy.logic import ForwardChaining
 from nesy.semantics import SumProductSemiring
 
