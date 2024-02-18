@@ -30,19 +30,27 @@ class OrNode(LogicNode):
 
 class ForwardChaining(LogicEngine):
     def reason(self, program, queries):
-        query = parse_term("addition(tensor(images,0), tensor(images,1), 1)")
-        
-        ''' 
-        Or = lambda x: OrNode(x)
-        And = lambda x: AndNode(x)
-        Leaf = lambda x: LeafNode(x)
-        and_or_tree = Or([
-            And([
-                Leaf(parse_term("digit(tensor(images,0), 0)")),
-                Leaf(parse_term("digit(tensor(images,1), 0)")),
-            ])
-        ])
-        '''
+        #query = parse_term("addition(tensor(images,0), tensor(images,1), 2)")
+        #print(queries)
+        result = None
+
+        # Test
+        if isinstance(queries[0], list):
+            result = [[] for _ in range(len(queries))]
+            for i, q in enumerate(queries):
+                for qq in q:
+                    result[i].append(self.solve_query(program, qq))
+
+        # Train
+        else:
+            result = []
+            for q in queries:
+                result.append(self.solve_query(program, q))
+
+        #print(result)
+        return result
+    
+    def solve_query(self, program, query):
         clause = program[0]
         facts = program[1:]
         new = []
@@ -53,7 +61,6 @@ class ForwardChaining(LogicEngine):
                     replace_with = query.arguments[i]
                     new_args = tuple(replace_with if x == arg else x for x in new_args)
                 new.append(Term(c.functor, new_args))
-        print(new)
 
         add_clause = None
         other_clauses = []
@@ -62,7 +69,6 @@ class ForwardChaining(LogicEngine):
                 add_clause = c
             else:
                 other_clauses.append(c)
-        
         add_facts = []
         for f in facts:
             if f.term.functor == 'add':
@@ -70,13 +76,12 @@ class ForwardChaining(LogicEngine):
 
         free_var = tuple(add_clause.arguments[0:2])
         result = add_clause.arguments[2]
-
         free_var_assignments = []
-
         for f in add_facts:
             if f.term.arguments[2] == result:
                 free_var_assignments.append(tuple(f.term.arguments[0:2]))
-
+        
+        # Substitute
         new_facts = [[] for _ in range(len(free_var_assignments))]
         for i in range(len(free_var_assignments)):
             assign = free_var_assignments[i]
@@ -89,9 +94,15 @@ class ForwardChaining(LogicEngine):
                         new_args[j] = assign[1]
                 new_facts[i].append(Term(c.functor, tuple(new_args)))
 
-        print(new_facts)
-
+        # Replace with neural predicates
+        for i, g in enumerate(new_facts):
+            for j, c in enumerate(g):
+                if c.functor != 'digit': break
+                for f in facts:
+                    if f.term == c:
+                        new_facts[i][j] = f.weight
         return new_facts
+
 
 
     
