@@ -20,46 +20,46 @@ class SumProductSemiring(Semantics):
     # TODO: Implement this
 
     def conjunction(self, a, b):
-        pass
+        return a + b
 
     def disjunction(self, a, b):
-        pass
+        return max(a, b)
 
     def negation(self, a):
-        pass
+        return 1 - a
 
 class LukasieviczTNorm(Semantics):
     # TODO: Implement this
 
     def conjunction(self, a, b):
-        pass
+        return max(0, a + b - 1)
 
     def disjunction(self, a, b):
-        pass
+        return min(1, a + b)
 
     def negation(self, a):
-        pass
+        return 1 - a
 
 class GodelTNorm(Semantics):
     # TODO: Implement this
 
     def conjunction(self, a, b):
-        pass
+        return min(a, b)
 
     def disjunction(self, a, b):
-        pass
+        return max(a, b)
 
     def negation(self, a):
-        pass
+        return 1 if a == 0 else 0
 
 class ProductTNorm(Semantics):
     # TODO: Implement this
 
     def conjunction(self, a, b):
-        pass
+        return a * b
 
     def disjunction(self, a, b):
-        pass
+        return min(a, b)
 
     def negation(self, a):
-        pass
+        return 1 - a
