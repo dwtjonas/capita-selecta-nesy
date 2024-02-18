@@ -32,6 +32,8 @@ class ForwardChaining(LogicEngine):
     def reason(self, program, queries):
         #query = parse_term("addition(tensor(images,0), tensor(images,1), 2)")
         #print(queries)
+        #print("\n")
+        #print(program)
         result = None
 
         # Test
@@ -47,52 +49,45 @@ class ForwardChaining(LogicEngine):
             for q in queries:
                 result.append(self.solve_query(program, q))
 
-        #print(result)
+        print(result)
         return result
     
     def solve_query(self, program, query):
+
         clause = program[0]
         facts = program[1:]
+
+        # Derrive new facts using by substituing query into clause
         new = []
-        if clause.head.functor == query.functor:
-            for c in clause.body:
-                new_args = c.arguments
-                for i, arg in enumerate(clause.head.arguments):
-                    replace_with = query.arguments[i]
-                    new_args = tuple(replace_with if x == arg else x for x in new_args)
-                new.append(Term(c.functor, new_args))
+        for c in clause.body:
+            new_args = c.arguments
+            for i, arg in enumerate(clause.head.arguments):
+                replace_with = query.arguments[i]
+                new_args = tuple(replace_with if x == arg else x for x in new_args)
+            new.append(Term(c.functor, new_args))
 
-        add_clause = None
-        other_clauses = []
-        for c in new:
-            if c.functor == 'add':
-                add_clause = c
-            else:
-                other_clauses.append(c)
-        add_facts = []
-        for f in facts:
-            if f.term.functor == 'add':
-                add_facts.append(f)
+        add_clause = new[-1]
+        other_clauses = new[:-1]
 
-        free_var = tuple(add_clause.arguments[0:2])
-        result = add_clause.arguments[2]
+        # Find the possible assignments for the free variables
+        free_var = tuple(add_clause.arguments[0:-1])
+        result = add_clause.arguments[-1]
         free_var_assignments = []
-        for f in add_facts:
-            if f.term.arguments[2] == result:
-                free_var_assignments.append(tuple(f.term.arguments[0:2]))
+        for f in facts:
+            if f.term.functor == 'add' and f.term.arguments[-1] == result:
+                free_var_assignments.append(tuple(f.term.arguments[0:-1]))
         
-        # Substitute
+        # Substitute the free variables in all possbile ways
         new_facts = [[] for _ in range(len(free_var_assignments))]
-        for i in range(len(free_var_assignments)):
-            assign = free_var_assignments[i]
-            for c in new:
-                new_args = list(c.arguments)
-                for j, arg in enumerate(new_args):
-                    if arg == free_var[0]:
-                        new_args[j] = assign[0]
-                    elif arg == free_var[1]:
-                        new_args[j] = assign[1]
-                new_facts[i].append(Term(c.functor, tuple(new_args)))
+        for i, assignment in enumerate(free_var_assignments):
+            for clause in new:
+                args = list(clause.arguments)
+                # Assign to the free variables
+                for j, arg in enumerate(args):
+                    for k, var in enumerate(free_var):
+                        if arg == var:
+                            args[j] = assignment[k]
+                new_facts[i].append(Term(clause.functor, tuple(args)))
 
         # Replace with neural predicates
         for i, g in enumerate(new_facts):
