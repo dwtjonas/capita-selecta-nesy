@@ -56,8 +56,14 @@ class ProductTNorm(Semantics):
             term *= elem
         return term
     
-    def disjunction(self, a, b):
-        return (a+b)-(a*b)
+    def disjunction(self, a):
+        if(len(a) == 1): return a[0]
+        while len(a) > 1:
+            x = a.pop(0)
+            y = a.pop(0)
+            result = (x + y) - (x * y)
+            a.append(result)
+        return a[0]
 
     def negation(self, a):
         return 1 - a
