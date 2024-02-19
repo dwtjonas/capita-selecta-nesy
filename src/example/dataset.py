@@ -11,6 +11,7 @@ from torch.utils.data import default_collate
 
 transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5,), (0.5,))])
 
+NUMBER_OF_DIGITS = 2
 LIST_VARS = list(string.ascii_uppercase)
 
 def custom_collate(batch):
@@ -54,10 +55,17 @@ def generate_add_facts(n_digits, n_classes):
     arr = [0] * n_digits
     return augment_numbers(arr, n_digits)
 
+def generate_queries(n_digits):
+    res = "addition("
+    for i in range(n_digits):
+        res += f"tensor(images, {i}), "
+    res += "{})."
+    return res
+
 class AdditionTask(Dataset):
 
-    def __init__(self, n=4, train=True, n_classes=2, nr_examples=None):
-        assert n == 4, "Only n=2 is supported at the moment"
+    def __init__(self, n=NUMBER_OF_DIGITS, train=True, n_classes=3, nr_examples=None):
+        assert n == 2, "Only n=2 is supported at the moment"
         self.train = train
 
         # We iterate over the MNIST dataset to apply the transform
@@ -101,7 +109,7 @@ class AdditionTask(Dataset):
         else:
             self.nr_examples = len(self.original_images) // self.num_digits
 
-    def __getitem__(self, index):
+    def __getitem__(self, index,n=NUMBER_OF_DIGITS):
         images = self.original_images[index * self.num_digits: (index + 1) * self.num_digits]
         targets = self.original_targets[index * self.num_digits: (index + 1) * self.num_digits]
         target = int(targets.sum())
@@ -110,9 +118,9 @@ class AdditionTask(Dataset):
             # In MNIST Addition, training queries for a single pair of images check for a given sum (i.e. the target)
             # Therefore, we have a List[Term], each element of the list correspond to a single pair of images
 
-            query = parse_program("addition(tensor(images, 0), tensor(images,1), {}).".format(target))[0].term
+            query = parse_program(generate_queries(n).format(target))[0].term
             tensor_sources = {"images": images}
-
+            print(query)
             return tensor_sources, query, torch.tensor([1.0])
         else:
             # In MNIST Addition, testing queries for a single pair of images check for all possible sums.
@@ -120,10 +128,10 @@ class AdditionTask(Dataset):
             # Therefore, we have a List[List[Term]], each element of the outer list correspond to a single pair of
             # images. Each element of the inner list correspond to a possible sum.
 
-            queries = [parse_program("addition(tensor(images, 0), tensor(images,1), {}).".format(z))[0].term
+            queries = [parse_program(generate_queries(n).format(z))[0].term
                        for z in range(self.n_classes * 2 - 1)]
             tensor_sources = {"images": images}
-
+            print(queries)
             return tensor_sources, queries, target
 
     def dataloader(self, batch_size=2, shuffle=None, num_workers=0):
