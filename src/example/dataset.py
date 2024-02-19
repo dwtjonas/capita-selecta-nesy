@@ -11,7 +11,6 @@ from torch.utils.data import default_collate
 
 transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5,), (0.5,))])
 
-MAX_NUMBER_OF_DIGITS = 4
 LIST_VARS = list(string.ascii_uppercase)
 
 def custom_collate(batch):
@@ -72,15 +71,13 @@ class AdditionTask(Dataset):
         self.original_targets = torch.tensor(self.original_targets)
         self.n_classes = n_classes
         self.num_digits = n
-        program_string = "addition(X,Y,Z) :- digit(X,N1), digit(Y,N2), add(N1,N2,Z).\n"
-        for i in range(3,n+1):
-            res = ""
-            res += generate_addition_string(i,LIST_VARS)
-            res +=generate_digit_strings(i,LIST_VARS)
-            res +=generate_add_string(i,LIST_VARS)
-            print("\n---result---\n")
-            print(res)
-            program_string += "\n" + res
+        program_string = ""
+        addition_string = generate_addition_string(n,LIST_VARS)
+        addition_string +=generate_digit_strings(n,LIST_VARS)
+        addition_string +=generate_add_string(n,LIST_VARS)
+        print("\n---result---\n")
+        print(addition_string)
+        program_string += addition_string
         print(generate_add_facts(n, n_classes))
         program_string += generate_add_facts(n, n_classes)
         """
