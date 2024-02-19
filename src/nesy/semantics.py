@@ -20,7 +20,7 @@ class SumProductSemiring(Semantics):
     # TODO: Implement this
 
     def conjunction(self, a, b):
-        return a + b
+        return a * b
 
     def disjunction(self, a, b):
         return max(a, b)
@@ -50,7 +50,7 @@ class GodelTNorm(Semantics):
         return max(a, b)
 
     def negation(self, a):
-        return 1 if a == 0 else 0
+        return 1-a
 
 class ProductTNorm(Semantics):
     # TODO: Implement this
@@ -59,7 +59,7 @@ class ProductTNorm(Semantics):
         return a * b
 
     def disjunction(self, a, b):
-        return min(a, b)
+        return (a+b)-(a*b)
 
     def negation(self, a):
         return 1 - a
