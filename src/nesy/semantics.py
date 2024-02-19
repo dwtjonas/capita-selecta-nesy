@@ -24,7 +24,7 @@ class SumProductSemiring(Semantics):
         return term
 
     def disjunction(self, a):
-        return max(a)
+        return sum(a)
 
     def negation(self, a):
         return 1 - a
