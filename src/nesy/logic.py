@@ -49,7 +49,7 @@ class ForwardChaining(LogicEngine):
             for q in queries:
                 result.append(self.solve_query(program, q))
 
-        print(result)
+        #print(result)
         return result
     
     def solve_query(self, program, query):
