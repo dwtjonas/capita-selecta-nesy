@@ -6,21 +6,20 @@ from nesy.semantics import GodelTNorm, LukasieviczTNorm, SumProductSemiring
 import torch
 import pytorch_lightning as pl
 
-for i in range(4,5 ):
-    print(i)
-    print('\n')
-    task_train = AdditionTask(n_classes=i)
-    task_test = AdditionTask(n_classes=i, train=False)
+n_classes = 3
+NUMBER_OF_DIGITS = 3
 
-    neural_predicates = torch.nn.ModuleDict({"digit": MNISTEncoder(task_train.n_classes)})
+task_train = AdditionTask(n=NUMBER_OF_DIGITS, n_classes=n_classes)
+task_test = AdditionTask(n=NUMBER_OF_DIGITS, n_classes=n_classes, train=False)
 
-    model = NeSyModel(program=task_train.program,
-                    logic_engine=ForwardChaining(),
-                    neural_predicates=neural_predicates,
-                    label_semantics=GodelTNorm())
+neural_predicates = torch.nn.ModuleDict({"digit": MNISTEncoder(task_train.n_classes)})
 
-    trainer = pl.Trainer(max_epochs=1)
-    trainer.fit(model=model,
-                train_dataloaders=task_train.dataloader(batch_size=3),
-                val_dataloaders=task_test.dataloader(batch_size=3))
-    print("run ended\n")
+model = NeSyModel(program=task_train.program,
+                logic_engine=ForwardChaining(),
+                neural_predicates=neural_predicates,
+                label_semantics=SumProductSemiring())
+
+trainer = pl.Trainer(max_epochs=1)
+trainer.fit(model=model,
+            train_dataloaders=task_train.dataloader(batch_size=2),
+            val_dataloaders=task_test.dataloader(batch_size=2))

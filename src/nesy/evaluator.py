@@ -36,11 +36,4 @@ class Evaluator():
                 elif c.functor == 'add':
                     tree[i][j] = 1
             tree[i] = self.label_semantics.conjunction(tree[i])
-            temp = 1
-            '''
-            for e in tree[i]: # TODO change to generic semantics! (AND on tree[i]  (is a list))
-                temp *= e
-            tree[i] = temp'''
-        res = self.label_semantics.disjunction(tree)
-        return res
-        #return sum(tree) # TODO change to generic semantics! (OR on tree (is a list))
+        return self.label_semantics.disjunction(tree)
