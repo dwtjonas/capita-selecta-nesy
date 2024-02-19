@@ -53,7 +53,7 @@ def generate_add_facts(n_digits, n_classes):
             current.pop()
         return result
     arr = [0] * n_digits
-    return augment_numbers(arr, n_digits)
+    return augment_numbers(arr, n_classes)
 
 def generate_queries(n_digits):
     res = "addition("
@@ -64,7 +64,7 @@ def generate_queries(n_digits):
 
 class AdditionTask(Dataset):
 
-    def __init__(self, n=NUMBER_OF_DIGITS, train=True, n_classes=3, nr_examples=None):
+    def __init__(self, n=NUMBER_OF_DIGITS, train=True, n_classes=4, nr_examples=None):
         assert n == 2, "Only n=2 is supported at the moment"
         self.train = train
 
@@ -83,10 +83,7 @@ class AdditionTask(Dataset):
         addition_string = generate_addition_string(n,LIST_VARS)
         addition_string +=generate_digit_strings(n,LIST_VARS)
         addition_string +=generate_add_string(n,LIST_VARS)
-        print("\n---result---\n")
-        print(addition_string)
         program_string += addition_string
-        print(generate_add_facts(n, n_classes))
         program_string += generate_add_facts(n, n_classes)
         """
         program_string += "\n".join(
@@ -120,7 +117,6 @@ class AdditionTask(Dataset):
 
             query = parse_program(generate_queries(n).format(target))[0].term
             tensor_sources = {"images": images}
-            print(query)
             return tensor_sources, query, torch.tensor([1.0])
         else:
             # In MNIST Addition, testing queries for a single pair of images check for all possible sums.
@@ -131,7 +127,6 @@ class AdditionTask(Dataset):
             queries = [parse_program(generate_queries(n).format(z))[0].term
                        for z in range(self.n_classes * 2 - 1)]
             tensor_sources = {"images": images}
-            print(queries)
             return tensor_sources, queries, target
 
     def dataloader(self, batch_size=2, shuffle=None, num_workers=0):
