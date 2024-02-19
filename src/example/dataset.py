@@ -55,21 +55,6 @@ def generate_add_facts(n_digits, n_classes):
     arr = [0] * n_digits
     return augment_numbers(arr, n_digits)
 
-def generate_tensor_digit_image(n_digits, n_classes):
-    def augment_numbers(arr, n, current=[], result=""):
-        if len(current) == len(arr):
-            current_sum = sum(current)
-            result += f"add{tuple(current + [current_sum])}."
-            return result
-        for i in range(n):
-            current.append(i)
-            result = augment_numbers(arr, n, current, result)
-            current.pop()
-        return result
-    arr = [0] * n_digits
-    return augment_numbers(arr, n_digits)
-
-
 class AdditionTask(Dataset):
 
     def __init__(self, n=4, train=True, n_classes=2, nr_examples=None):
