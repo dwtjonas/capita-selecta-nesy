@@ -103,6 +103,9 @@ class AdditionTask(Dataset):
             [f"add({x}, {y}, {x + y})." for x in range(self.n_classes) for y in range(self.n_classes)])
         """
         program_string += "\n"
+        print("\n".join(
+            [f"nn(digit, tensor(images, {x}), {y}) :: digit(tensor(images, {x}),{y})." for x, y in
+             product(range(self.num_digits), range(self.n_classes))]))
         program_string += "\n".join(
             [f"nn(digit, tensor(images, {x}), {y}) :: digit(tensor(images, {x}),{y})." for x, y in
              product(range(self.num_digits), range(self.n_classes))])
