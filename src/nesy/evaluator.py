@@ -13,25 +13,25 @@ class Evaluator():
             result = [[] for _ in range(len(queries))]
             for i, q in enumerate(queries):
                 for j in range(len(q)):
-                    result[i].append(self.eval_tree(tensor_sources, and_or_tree[i][j]))
+                    result[i].append(self.eval_tree(tensor_sources, and_or_tree[i][j], i))
                 result[i] = torch.tensor(result[i])
 
         # Train
         else:
             result = []
             for i in range(len(queries)):
-                result.append(self.eval_tree(tensor_sources, and_or_tree[i]))
+                result.append(self.eval_tree(tensor_sources, and_or_tree[i], i))
 
         return torch.stack(result)
 
     
-    def eval_tree(self, tensor_sources, tree):
+    def eval_tree(self, tensor_sources, tree, batch):
         for i, b in enumerate(tree): # OR
             for j, c in enumerate(b): # AND
                 if c.functor == 'nn':
                     image = int(c.arguments[1].arguments[1].functor)
                     result = int(c.arguments[2].functor)
-                    p_digit = self.neural_predicates["digit"](tensor_sources["images"][:,image])[:,result][0]
+                    p_digit = self.neural_predicates["digit"](tensor_sources["images"][:,image])[:,result][batch]
                     tree[i][j] = p_digit
                 elif c.functor == 'add':
                     tree[i][j] = 1

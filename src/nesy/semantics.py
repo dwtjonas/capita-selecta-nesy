@@ -17,47 +17,45 @@ class Semantics(ABC):
 
 
 class SumProductSemiring(Semantics):
-    # TODO: Implement this
+    def conjunction(self, a):
+        term = 1
+        for elem in a:
+            term *= elem
+        return term
 
-    def conjunction(self, a, b):
-        return a * b
-
-    def disjunction(self, a, b):
-        return max(a, b)
+    def disjunction(self, a):
+        return max(a)
 
     def negation(self, a):
         return 1 - a
 
 class LukasieviczTNorm(Semantics):
-    # TODO: Implement this
+    def conjunction(self, a):
+        return max(0 * a[0], sum(a) - (len(a) - 1))
 
-    def conjunction(self, a, b):
-        return max(0, a + b - 1)
-
-    def disjunction(self, a, b):
-        return min(1, a + b)
+    def disjunction(self, a):
+        return min(0 * a[0] + 1, sum(a))
 
     def negation(self, a):
         return 1 - a
 
 class GodelTNorm(Semantics):
-    # TODO: Implement this
+    def conjunction(self, a):
+        return min(a)
 
-    def conjunction(self, a, b):
-        return min(a, b)
-
-    def disjunction(self, a, b):
-        return max(a, b)
+    def disjunction(self, a):
+        return max(a)
 
     def negation(self, a):
         return 1-a
 
 class ProductTNorm(Semantics):
-    # TODO: Implement this
-
-    def conjunction(self, a, b):
-        return a * b
-
+    def conjunction(self, a):
+        term = 1
+        for elem in a:
+            term *= elem
+        return term
+    
     def disjunction(self, a, b):
         return (a+b)-(a*b)
 

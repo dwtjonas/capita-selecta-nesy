@@ -1,7 +1,7 @@
 from nesy.model import NeSyModel, MNISTEncoder
 from example.dataset import AdditionTask
 from nesy.logic import ForwardChaining
-from nesy.semantics import LukasieviczTNorm, SumProductSemiring
+from nesy.semantics import GodelTNorm, LukasieviczTNorm, SumProductSemiring
 
 import torch
 import pytorch_lightning as pl
@@ -14,7 +14,7 @@ neural_predicates = torch.nn.ModuleDict({"digit": MNISTEncoder(task_train.n_clas
 model = NeSyModel(program=task_train.program,
                   logic_engine=ForwardChaining(),
                   neural_predicates=neural_predicates,
-                  label_semantics=LukasieviczTNorm())
+                  label_semantics=SumProductSemiring())
 
 trainer = pl.Trainer(max_epochs=1)
 trainer.fit(model=model,
