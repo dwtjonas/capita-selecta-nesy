@@ -1,3 +1,5 @@
+import string
+
 from nesy.parser import parse_program, parse_clause
 
 import torch
@@ -9,16 +11,69 @@ from torch.utils.data import default_collate
 
 transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5,), (0.5,))])
 
+MAX_NUMBER_OF_DIGITS = 4
+LIST_VARS = list(string.ascii_uppercase)
 
 def custom_collate(batch):
     batch = tuple(zip(*batch))
     return default_collate(batch[0]), batch[1], default_collate(batch[2])
 
+#For generating something of template "addition(X,Y,Z) :- digit(X,N1), digit(Y,N2), add(N1,N2,Z).\n"
+def generate_addition_string(n, list):
+    s = "addition("
+    for i in range(n):
+        s +=f"{list[i]},"
+    s += "Z) :- "
+    return s
+
+def generate_digit_strings(n, list):
+    s = ""
+    for i in range(n):
+        s += f"digit({list[i]},N{i+1}), "
+    return s
+
+def generate_add_string(n, list):
+    s = "add("
+    for i in range(1,n+1):
+        s += f"N{i},"
+    s += "Z).\n"
+    return s
+
+#For generating somthing of template add(1,1,2,4)
+def generate_add_facts(n_digits, n_classes):
+    def augment_numbers(arr, n, current=[], result=""):
+        if len(current) == len(arr):
+            current_sum = sum(current)
+            result += f"add{tuple(current + [current_sum])}.".replace(" ", "")
+            result += " "
+            return result
+        for i in range(n):
+            current.append(i)
+            result = augment_numbers(arr, n, current, result)
+            current.pop()
+        return result
+    arr = [0] * n_digits
+    return augment_numbers(arr, n_digits)
+
+def generate_tensor_digit_image(n_digits, n_classes):
+    def augment_numbers(arr, n, current=[], result=""):
+        if len(current) == len(arr):
+            current_sum = sum(current)
+            result += f"add{tuple(current + [current_sum])}."
+            return result
+        for i in range(n):
+            current.append(i)
+            result = augment_numbers(arr, n, current, result)
+            current.pop()
+        return result
+    arr = [0] * n_digits
+    return augment_numbers(arr, n_digits)
+
 
 class AdditionTask(Dataset):
 
-    def __init__(self, n=2, train=True, n_classes=10, nr_examples=None):
-        assert n == 2, "Only n=2 is supported at the moment"
+    def __init__(self, n=4, train=True, n_classes=2, nr_examples=None):
+        assert n == 4, "Only n=2 is supported at the moment"
         self.train = train
 
         # We iterate over the MNIST dataset to apply the transform
@@ -33,9 +88,24 @@ class AdditionTask(Dataset):
         self.n_classes = n_classes
         self.num_digits = n
         program_string = "addition(X,Y,Z) :- digit(X,N1), digit(Y,N2), add(N1,N2,Z).\n"
+        for i in range(3,n+1):
+            res = ""
+            res += generate_addition_string(i,LIST_VARS)
+            res +=generate_digit_strings(i,LIST_VARS)
+            res +=generate_add_string(i,LIST_VARS)
+            print("\n---result---\n")
+            print(res)
+            program_string += "\n" + res
+        print(generate_add_facts(n, n_classes))
+        program_string += generate_add_facts(n, n_classes)
+        """
         program_string += "\n".join(
             [f"add({x}, {y}, {x + y})." for x in range(self.n_classes) for y in range(self.n_classes)])
+        """
         program_string += "\n"
+        print("\n".join(
+            [f"nn(digit, tensor(images, {x}), {y}) :: digit(tensor(images, {x}),{y})." for x, y in
+             product(range(self.num_digits), range(self.n_classes))]))
         program_string += "\n".join(
             [f"nn(digit, tensor(images, {x}), {y}) :: digit(tensor(images, {x}),{y})." for x, y in
              product(range(self.num_digits), range(self.n_classes))])
