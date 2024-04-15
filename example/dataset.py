@@ -31,7 +31,7 @@ operations = ["+","*","-"]
 #For generating something of template "multiplication(X,Y,Z) :- digit(X,N1), digit(Y,N2), multiply(N1,N2,Z).\n"
 def generate_operation_string(n, list):
     s = "operation("
-    s += f"&,"
+    s += f"Op,"
     for i in range(n):
         s +=f"{list[i]},"
     s += "Z) :- "
@@ -44,7 +44,7 @@ def generate_digit_strings(n, list):
     return s
 
 def generate_op_strings(n, list):
-    s = f"op(&,N1), "
+    s = f"op(Op,N1), "
     return s
 
 def generate_solve_string(n, list):
@@ -58,7 +58,7 @@ def generate_solve_string(n, list):
 def generate_math_facts(n_digits, n_classes):
     def augment_numbers(arr, n, current=[], result=""):
         if len(current) == len(arr):
-            for op in ["+", "*", "-"]:
+            for op in ["+", "*"]:
                 if op == "+":
                     result_value = sum(current)
                 elif op == "*":
@@ -69,8 +69,8 @@ def generate_math_facts(n_digits, n_classes):
                     result_value = current[0]
                     for num in current[1:]:
                         result_value -= num
-                result += f"{op}{tuple(current + [result_value])},".replace(" ", "")
-            return result[:-1]
+                result += f"solve({op},{','.join(map(str, current))},{result_value}). "
+            return result
         for i in range(1, n + 1):
             current.append(i)
             result = augment_numbers(arr, n, current, result)
@@ -78,7 +78,8 @@ def generate_math_facts(n_digits, n_classes):
         return result
 
     arr = [0] * n_digits
-    return augment_numbers(arr, n_classes)
+    result = augment_numbers(arr, n_classes)
+    return result.rstrip('. ')
 
 def generate_queries_m(n_digits):
     res = "operation("
@@ -189,16 +190,13 @@ class AdditionTask(Dataset):
         self.n_classes = n_classes
         self.num_digits = n
         program_string = ""
-        addition_string = generate_addition_string(n,LIST_VARS)
-        addition_string +=generate_digit_strings(n,LIST_VARS)
-        addition_string +=generate_add_string(n,LIST_VARS)
+        addition_string = generate_addition_string(n, LIST_VARS)
+        addition_string += generate_digit_strings(n, LIST_VARS)
+        #addition_string += generate_op_strings(n, LIST_VARS)
+        addition_string += generate_add_string(n, LIST_VARS)
         program_string += addition_string
         program_string += generate_add_facts(n, n_classes)
-        print(generate_operation_string(n,LIST_VARS))
-        print(generate_digit_strings(n,LIST_VARS))
-        print(generate_op_strings(n,LIST_VARS))
-        print(generate_solve_string(n, LIST_VARS))
-        print(generate_math_facts(n, n_classes))
+        print(program_string)
         """
         program_string += "\n".join(
             [f"add({x}, {y}, {x + y})." for x in range(self.n_classes) for y in range(self.n_classes)])
