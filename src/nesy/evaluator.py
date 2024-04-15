@@ -25,15 +25,24 @@ class Evaluator():
         return torch.stack(result)
 
     
-    def eval_tree(self, tensor_sources, tree, batch):
+    def eval_tree(self, tensor_sources, tree, batch):     
         for i, b in enumerate(tree): # OR
             for j, c in enumerate(b): # AND
                 if c.functor == 'nn':
                     image = int(c.arguments[1].arguments[1].functor)
                     result = int(c.arguments[2].functor)
-                    p_digit = self.neural_predicates["digit"](tensor_sources["images"][:,image])[:,result][batch]
+                    entry = c.arguments[0].functor
+                    if entry == 'digit':
+                        if(len(tensor_sources) == 2): image -= 1
+                        p_digit = self.neural_predicates["digit"](tensor_sources['images'][:,image])[:,result][batch]
+                    else:
+                        p_digit = self.neural_predicates["digit"](tensor_sources['operator'])[:,result][batch]
                     tree[i][j] = p_digit
                 elif c.functor == 'add':
                     tree[i][j] = 1
+                elif c.functor == 'op':
+                    tree[i][j] = 1
+                else:
+                    Exception # should not get here
             tree[i] = self.label_semantics.conjunction(tree[i])
         return self.label_semantics.disjunction(tree)
