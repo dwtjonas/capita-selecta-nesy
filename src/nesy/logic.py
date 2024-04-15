@@ -76,6 +76,8 @@ class ForwardChaining(LogicEngine):
         for f in facts:
             if f.term.functor == 'add' and f.term.arguments[-1] == result:
                 free_var_assignments.append(tuple(f.term.arguments[0:-1]))
+            if f.term.functor == 'op' and f.term.arguments[-1] == result:
+                free_var_assignments.append(tuple(f.term.arguments[0:-1]))           
         
         # Substitute the free variables in all possbile ways
         new_facts = [[] for _ in range(len(free_var_assignments))]
@@ -92,10 +94,11 @@ class ForwardChaining(LogicEngine):
         # Replace with neural predicates
         for i, g in enumerate(new_facts):
             for j, c in enumerate(g):
-                if c.functor != 'digit': break
+                if not c.functor == 'digit' and not c.functor == 'operator': continue
                 for f in facts:
                     if f.term == c:
                         new_facts[i][j] = f.weight
+                        break
         return new_facts
 
 

@@ -20,7 +20,6 @@ class MNISTEncoder(nn.Module):
             nn.Linear(30, n),
             nn.Softmax(-1))
 
-
     def forward(self, x):
         #We flatten the tensor
         original_shape = x.shape
@@ -31,9 +30,8 @@ class MNISTEncoder(nn.Module):
         #We restore the original shape
         o = o.view(*original_shape[0:n_dims-3], self.n)
         return o
-
+    
 class NeSyModel(pl.LightningModule):
-
 
     def __init__(self, program : List[Clause],
                  neural_predicates: torch.nn.ModuleDict,
@@ -48,6 +46,7 @@ class NeSyModel(pl.LightningModule):
         self.learning_rate = learning_rate
         self.bce = torch.nn.BCELoss()
         self.evaluator = Evaluator(neural_predicates=neural_predicates, label_semantics=label_semantics)
+        self.test_accs = [] 
 
     def forward(self, tensor_sources: Dict[str, torch.Tensor],  queries: List[Term] | List[List[Term]]):
         # TODO: Note that you need to handle both the cases of single queries (List[Term]), like during training
@@ -75,3 +74,8 @@ class NeSyModel(pl.LightningModule):
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(self.parameters(), lr=self.learning_rate)
         return optimizer
+    
+    def on_train_epoch_end(self):
+        test_acc_epoch = self.trainer.callback_metrics.get("test_acc_epoch")
+        self.test_accs.append(test_acc_epoch)
+        print(f"\nTest Accuracy after epoch {self.current_epoch}: {test_acc_epoch}")

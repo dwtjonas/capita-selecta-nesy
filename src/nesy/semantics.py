@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
 
+import torch
+
 
 class Semantics(ABC):
 
@@ -57,6 +59,7 @@ class ProductTNorm(Semantics):
         return term
     
     def disjunction(self, a):
+        if(len(a) == 0): return torch.tensor(0)
         if(len(a) == 1): return a[0]
         while len(a) > 1:
             x = a.pop(0)
