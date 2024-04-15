@@ -49,7 +49,7 @@ def generate_op_strings(n, list):
 
 def generate_solve_string(n, list):
     s = "solve("
-    for i in range(1,n+1):
+    for i in range(1,n+2):
         s += f"N{i},"
     s += "Z).\n"
     return s
@@ -196,6 +196,7 @@ class AdditionTask(Dataset):
         addition_string += generate_add_string(n, LIST_VARS)
         program_string += addition_string
         program_string += generate_add_facts(n, n_classes)
+        print(generate_solve_string(n, LIST_VARS))
         print(program_string)
         """
         program_string += "\n".join(
