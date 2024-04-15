@@ -181,21 +181,17 @@ class AdditionTask(Dataset):
         self.original_targets = []
         ctr = 0
         mnist = MNIST('data/MNIST', train=train, download=False, transform=transform)
-        '''
-        ctrs = [0,0,0,0,0,0,0,0,0]
         for x, y in mnist:
             if y < n_classes:
-                if ctrs[y] < 930/9:
-                    ctrs[y] += 1
-                    self.original_images.append(x)
-                    self.original_targets.append(y)
-        print(sum(ctrs))
+                self.original_images.append(x)
+                self.original_targets.append(y)
         '''
+        #Used for other dataset
         for x in DATASET:
             self.original_images.append(torch.tensor(x))
         for y in TARGETS:
             self.original_targets.append(y)
-
+        '''
         self.original_images = torch.stack(self.original_images)
         self.original_targets = torch.tensor(self.original_targets)
         self.n_classes = n_classes
