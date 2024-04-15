@@ -1,5 +1,7 @@
 import string
 
+import numpy as np
+
 from nesy.parser import parse_program, parse_clause
 
 import torch
@@ -12,10 +14,78 @@ from torch.utils.data import default_collate
 transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5,), (0.5,))])
 
 LIST_VARS = list(string.ascii_uppercase)
+HASYV2 = None
+
+def unpickle(file):
+    import pickle
+    with open(file, 'rb') as fo:
+        dict = pickle.load(fo, encoding='bytes')
+    return dict
+
 
 def custom_collate(batch):
     batch = tuple(zip(*batch))
     return default_collate(batch[0]), batch[1], default_collate(batch[2])
+
+operations = ["+","*","-"]
+#For generating something of template "multiplication(X,Y,Z) :- digit(X,N1), digit(Y,N2), multiply(N1,N2,Z).\n"
+def generate_operation_string(n, list):
+    s = "operation("
+    s += f"&,"
+    for i in range(n):
+        s +=f"{list[i]},"
+    s += "Z) :- "
+    return s
+
+def generate_digit_strings(n, list):
+    s = ""
+    for i in range(2,n+1):
+        s += f"digit({list[i]},N{i+1}), "
+    return s
+
+def generate_op_strings(n, list):
+    s = f"op(&,N1), "
+    return s
+
+def generate_solve_string(n, list):
+    s = "solve("
+    for i in range(1,n+1):
+        s += f"N{i},"
+    s += "Z).\n"
+    return s
+
+#For generating somthing of template solve(+,1,1,2,4)
+def generate_math_facts(n_digits, n_classes):
+    def augment_numbers(arr, n, current=[], result=""):
+        if len(current) == len(arr):
+            for op in ["+", "*", "-"]:
+                if op == "+":
+                    result_value = sum(current)
+                elif op == "*":
+                    result_value = 1
+                    for num in current:
+                        result_value *= num
+                elif op == "-":
+                    result_value = current[0]
+                    for num in current[1:]:
+                        result_value -= num
+                result += f"{op}{tuple(current + [result_value])},".replace(" ", "")
+            return result[:-1]
+        for i in range(1, n + 1):
+            current.append(i)
+            result = augment_numbers(arr, n, current, result)
+            current.pop()
+        return result
+
+    arr = [0] * n_digits
+    return augment_numbers(arr, n_classes)
+
+def generate_queries_m(n_digits):
+    res = "operation("
+    for i in range(n_digits):
+        res += f"tensor(images, {i}), "
+    res += "{})."
+    return res
 
 #For generating something of template "addition(X,Y,Z) :- digit(X,N1), digit(Y,N2), add(N1,N2,Z).\n"
 def generate_addition_string(n, list):
@@ -61,17 +131,57 @@ def generate_queries(n_digits):
     res += "{})."
     return res
 
+def filter_data():
+    characters = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-', '+']
+    HASYV2 = unpickle('HASYv2')
+    indices_list = []
+    element_list = []
+    ctr = 0
+    for x in HASYV2['latex_symbol']:
+        if x in characters:
+            indices_list.append(ctr)
+            element_list.append(x)
+        ctr += 1
+    return indices_list
+
+def preprocesses(list, data):
+    res = np.empty()
+    for i in list:
+        el = data['data'][:, :, i]
+        transformed_data = np.transpose(el, (3, 0, 1, 2))
+        transformed_data = transformed_data[:, :, :, 0]
+
+
 class AdditionTask(Dataset):
 
     def __init__(self, n=2, train=True, n_classes=4, nr_examples=None):
         #assert n == 2, "Only n=2 is supported at the moment"
         self.train = train
 
+        characters = ['0','1','2','3','4','5','6','7','8','9','-','+']
+        HASYV2 = unpickle('HASYv2')
+        indices_list = []
+        element_list = []
+        ctr = 0
+        for x in HASYV2['latex_symbol']:
+            if x in characters:
+                indices_list.append(ctr)
+                element_list.append(x)
+            ctr += 1
         # We iterate over the MNIST dataset to apply the transform
         self.original_images = []
         self.original_targets = []
-        for x,y in  MNIST('data/MNIST/', train=train, download=True, transform=transform):
+        ctr = 0
+        mnist = MNIST('data/MNIST', train=train, download=False, transform=transform)
+        print(len(mnist.data[0][0]))
+        print(mnist.data)
+        for x,y in mnist:
             if y < n_classes:
+                if ctr == 0:
+                    print(x)
+                    print(len(x))
+                    print(len(x[0]))
+                    ctr = 1
                 self.original_images.append(x)
                 self.original_targets.append(y)
         self.original_images = torch.stack(self.original_images)
@@ -84,6 +194,11 @@ class AdditionTask(Dataset):
         addition_string +=generate_add_string(n,LIST_VARS)
         program_string += addition_string
         program_string += generate_add_facts(n, n_classes)
+        print(generate_operation_string(n,LIST_VARS))
+        print(generate_digit_strings(n,LIST_VARS))
+        print(generate_op_strings(n,LIST_VARS))
+        print(generate_solve_string(n, LIST_VARS))
+        print(generate_math_facts(n, n_classes))
         """
         program_string += "\n".join(
             [f"add({x}, {y}, {x + y})." for x in range(self.n_classes) for y in range(self.n_classes)])
